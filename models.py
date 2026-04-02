@@ -5,38 +5,39 @@ from llama_cpp.llama_chat_format import MoondreamChatHandler
 
 class LlamaProcessor:
     """
-    Класс-обертка для llama.cpp, работающий с мультимодальной моделью moondream2.
-    Принимает байты изображения и возвращает текстовое описание/категорию.
+    Wrapper class for llama.cpp, working with the moondream2 multimodal model.
+    Takes image bytes and returns a text description/category.
     """
     def __init__(self, model_path="moondream2-q4_k.gguf", mmproj_path="moondream2-mmproj-f16.gguf"):
-        # Проверка наличия файлов моделей
+        # Check if model files exist
         if not os.path.exists(model_path) or not os.path.exists(mmproj_path):
-            print(f"⚠️ Внимание: Файлы моделей не найдены! Ожидались {model_path} и {mmproj_path}")
+            print(f"⚠️ Warning: Model files not found! Expected {model_path} and {mmproj_path}")
         
-        # Специальный ChatHandler для Moondream2 (важно!)
+        # Special ChatHandler for Moondream2 (important!)
         self.chat_handler = MoondreamChatHandler(clip_model_path=mmproj_path)
         
-        # Инициализация модели. 
-        # n_threads=4 идеален для Raspberry Pi 4.
-        # n_ctx=2048 достаточно для анализа фото.
+        # Initialize model. 
+        # n_threads=4 is ideal for Raspberry Pi 4.
+        # n_ctx=1200 is sufficient for Moondream2 (729 image tokens + prompt + response).
+        # Lower n_ctx reduces RAM usage.
         self.llm = Llama(
             model_path=model_path,
             chat_handler=self.chat_handler,
-            n_ctx=2048,
+            n_ctx=1200,
             n_threads=4,
             logits_all=False
         )
 
     def process_image(self, image_data: bytes, prompt: str = "Describe the object held in the person's hand with as much detail as possible. Identify its physical characteristics: material (plastic, metal, organic, glass, etc.), color, shape, texture, and any visible text or branding. Finally, classify what type of waste this is (plastic, organic, battery, or other) and explain your reasoning.") -> str:
         """
-        Принимает байты изображения, конвертирует в Data URI и прогоняет через нейросеть.
+        Takes image bytes, converts to Data URI and processes through the neural network.
         """
         try:
-            # Конвертация байтов в base64
+            # Convert bytes to base64
             base64_image = base64.b64encode(image_data).decode('utf-8')
             image_uri = f"data:image/jpeg;base64,{base64_image}"
 
-            # Формируем запрос для Moondream2/Llava
+            # Form request for Moondream2/Llava
             response = self.llm.create_chat_completion(
                 messages=[
                     {
@@ -47,8 +48,8 @@ class LlamaProcessor:
                         ]
                     }
                 ],
-                temperature=0.1, # Для стабильности ответа при категоризации
-                max_tokens=512   # Ограничение по длине ответа
+                temperature=0.1, # For response stability during categorization
+                max_tokens=512   # Response length limit
             )
 
             result_text = response["choices"][0]["message"]["content"].strip().lower()
@@ -57,7 +58,7 @@ class LlamaProcessor:
         except Exception as e:
             return f"Error processing image: {str(e)}"
 
-# Пример использования (закомментировано)
+# Usage example (commented out)
 # if __name__ == "__main__":
 #     processor = LlamaProcessor()
 #     with open("test.jpg", "rb") as f:
