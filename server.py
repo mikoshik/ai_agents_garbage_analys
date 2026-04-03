@@ -8,6 +8,10 @@ PORT = 8060
 SCANS_DIR = "scans"
 ASSETS_DIR = "assets"
 
+# Ensure directories exist
+os.makedirs(SCANS_DIR, exist_ok=True)
+os.makedirs(ASSETS_DIR, exist_ok=True)
+
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/" or self.path == "/index.html":
@@ -173,6 +177,11 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         
                         <div class="desc">
                             {res.get('description', 'No description available')}
+                        </div>
+
+                        <div style="margin-top: 15px; font-size: 0.75rem; color: #64748b; display: flex; gap: 15px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 10px;">
+                            <span>⏱️ {scan.get('metadata', {}).get('time_sec', '?.?')}s</span>
+                            <span>💾 {scan.get('metadata', {}).get('memory_mb', '???')} MB</span>
                         </div>
                     </div>
                 </div>

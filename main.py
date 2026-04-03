@@ -92,6 +92,10 @@ def main():
             stop_event = threading.Event()
             result_container = {"data": None, "error": None}
             
+            import psutil
+            mem_start = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
+            time_start = time.time()
+
             def model_task():
                 try:
                     result_container["data"] = model.detect_object(image_bytes, WasteClassification)
@@ -108,11 +112,19 @@ def main():
             # 4. Save and Display
             if result_container["data"]:
                 res = result_container["data"]
+                time_elapsed = time.time() - time_start
+                mem_end = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
+
                 # Save results JSON
                 scan_data = {
                     "id": scan_id,
                     "timestamp": datetime.now().isoformat(),
                     "image": image_path,
+                    "metadata": {
+                        "time_sec": round(time_elapsed, 2),
+                        "memory_mb": round(mem_end, 2),
+                        "memory_delta_mb": round(max(0, mem_end - mem_start), 2)
+                    },
                     "result": res.model_dump()
                 }
                 with open(f"scans/{scan_id}.json", "w") as f:

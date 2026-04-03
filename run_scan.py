@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import time
 from datetime import datetime
 from models import LlamaProcessor
 from schemas import WasteClassification
@@ -33,18 +34,28 @@ def run_automated_scan(image_source_path):
         f.write(image_bytes)
 
     # 2. Initialize Model
+    import psutil
+    mem_start = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
     processor = LlamaProcessor()
 
     # 3. Analyze
     print("🔍 AI Analysis in progress...")
+    time_start = time.time()
     try:
         result = processor.detect_object(image_bytes, WasteClassification)
+        time_elapsed = time.time() - time_start
+        mem_end = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
         
         # 4. Save metadata
         scan_data = {
             "id": scan_id,
             "timestamp": datetime.now().isoformat(),
             "image": target_image_path,
+            "metadata": {
+                "time_sec": round(time_elapsed, 2),
+                "memory_mb": round(mem_end, 2),
+                "memory_delta_mb": round(max(0, mem_end - mem_start), 2)
+            },
             "result": result.model_dump()
         }
         
