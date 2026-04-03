@@ -23,7 +23,8 @@ class LlamaProcessor:
             chat_handler=self.chat_handler,
             n_ctx=LLM_CTX,
             n_threads=LLM_THREADS,
-            logits_all=False
+            logits_all=False,
+            verbose=False # Прячем системные логи
         )
 
     def process_image(self, image_data: bytes, prompt: str = DEFAULT_PROMPT) -> str:

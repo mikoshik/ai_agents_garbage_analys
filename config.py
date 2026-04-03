@@ -25,9 +25,10 @@ else:
 # --- COMMON SETTINGS ---
 TEMPERATURE = 0.1      # Stable response for classification
 MAX_TOKENS = 512       # Maximum length of the AI answer
-CAMERA_WIDTH = 1280    
-CAMERA_HEIGHT = 720    
-CAMERA_WARMUP_FRAMES = 5 
+CAMERA_WIDTH = 640
+CAMERA_HEIGHT = 480    
+CAMERA_WARMUP_FRAMES = 25 # Increased to give sensor more time to adjust exposure
+CAMERA_CROP_FACTOR = 0.9  
 
 # Default prompt for waste classification
-DEFAULT_PROMPT = "Describe the object held in the person's hand with as much detail as possible. Identify its physical characteristics: material (plastic, metal, organic, glass, etc.), color, shape, texture, and any visible text or branding. Finally, classify what type of waste this is (plastic, organic, battery, or other) and explain your reasoning."
+DEFAULT_PROMPT = "Your task is to analyze waste items and determine their properties for classification. Focus strictly ONLY on the object held in the person's hand. Describe this object in high detail: its material, shape, and condition. Provide clear, practical instructions on how to prepare this item before disposal (e.g., rinsing, crushing, or separating parts) and classify it into the correct waste category."

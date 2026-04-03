@@ -16,12 +16,12 @@ class CameraHandler:
     def _open_camera(self):
         """Internal method to open camera connection."""
         if self.cap is None or not self.cap.isOpened():
-            self.cap = cv2.VideoCapture(self.camera_index)
+            # Use CAP_V4L2 backend explicitly
+            self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_V4L2)
+            
+            # Remove MJPEG since the hardware doesn't support it!
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-            
-            # Use MJPEG to avoid bandwidth timeouts (common on WSL/Pi)
-            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
             
             # Give the camera time to initialize the sensor
             time.sleep(1.0)
@@ -29,10 +29,20 @@ class CameraHandler:
             if not self.cap.isOpened():
                 raise ConnectionError(f"❌ Error: Could not open camera at /dev/video{self.camera_index}")
 
+    def _crop_center(self, frame):
+        """Crops the center of the frame based on CAMERA_CROP_FACTOR."""
+        h, w = frame.shape[:2]
+        new_w = int(w * CAMERA_CROP_FACTOR)
+        new_h = int(h * CAMERA_CROP_FACTOR)
+        
+        start_x = (w - new_w) // 2
+        start_y = (h - new_h) // 2
+        
+        return frame[start_y:start_y+new_h, start_x:start_x+new_w]
+
     def capture_frame(self):
         """
-        Captures one frame from the camera.
-        Returns: numpy array (image) or None.
+        Captures one frame from the camera and crops to the center.
         """
         self._open_camera()
         
@@ -46,19 +56,20 @@ class CameraHandler:
             print("⚠️ Error: Frame not captured")
             return None
             
-        return frame
+        # Crop to center for better detail
+        cropped_frame = self._crop_center(frame)
+        return cropped_frame
 
     def capture_to_bytes(self):
         """
-        Captures a frame and converts it to bytes (JPG format).
-        Convenient for direct passing to LlamaProcessor.
+        Captures a frame and converts it to bytes with maximum quality.
         """
         frame = self.capture_frame()
         if frame is None:
             return None
             
-        # Convert to JPG
-        success, encoded_image = cv2.imencode('.jpg', frame)
+        # Convert to JPG with maximum quality (100)
+        success, encoded_image = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
         if not success:
             return None
             
