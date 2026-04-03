@@ -13,18 +13,30 @@ class CameraHandler:
         self.height = height
         self.cap = None
 
+    def __repr__(self):
+        return f"CameraHandler(index={self.camera_index}, resolution={self.width}x{self.height}, fourcc={CAMERA_FOURCC})"
+
     def _open_camera(self):
         """Internal method to open camera connection."""
         if self.cap is None or not self.cap.isOpened():
             # Use CAP_V4L2 backend explicitly
             self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_V4L2)
             
-            # Remove MJPEG since the hardware doesn't support it!
+            # Use format from config.py
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*CAMERA_FOURCC))
+            
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             
+            # Устанавливаем FPS из конфига
+            self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
+            
             # Give the camera time to initialize the sensor
             time.sleep(1.0)
+            
+            # Warm-up frames for auto-exposure happen only once when opening
+            for _ in range(CAMERA_WARMUP_FRAMES):
+                self.cap.read()
             
             if not self.cap.isOpened():
                 raise ConnectionError(f"❌ Error: Could not open camera at /dev/video{self.camera_index}")
@@ -45,10 +57,6 @@ class CameraHandler:
         Captures one frame from the camera and crops to the center.
         """
         self._open_camera()
-        
-        # Warm-up frames for auto-exposure
-        for _ in range(CAMERA_WARMUP_FRAMES):
-            self.cap.read()
             
         ret, frame = self.cap.read()
         

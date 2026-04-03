@@ -1,7 +1,12 @@
 import cv2
 import time
 import os
+import sys
 import numpy as np
+
+# Добавляем родительскую директорию в путь
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from camera import CameraHandler
 
 def test_take_photo():
@@ -10,6 +15,7 @@ def test_take_photo():
     """
     print("\n--- Testing: Photo Capture ---")
     handler = CameraHandler()
+    print(handler.__repr__())
     filename = "test_photo.jpg"
     
     if handler.capture_to_file(filename):

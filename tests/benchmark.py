@@ -1,6 +1,11 @@
 import time
 import resource
 import os
+import sys
+
+# Добавляем родительскую директорию в путь
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from models import LlamaProcessor
 
 def get_perf_metrics():
