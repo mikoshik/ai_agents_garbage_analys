@@ -46,3 +46,4 @@ venv.bak/
 # Local logs/data
 *.log
 animations/
+last_scan.jpg
