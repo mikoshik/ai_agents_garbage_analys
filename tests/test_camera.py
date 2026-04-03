@@ -15,6 +15,7 @@ def test_take_photo():
     """
     print("\n--- Testing: Photo Capture ---")
     handler = CameraHandler()
+    print(handler.__repr__())
     filename = "test_photo.jpg"
     
     if handler.capture_to_file(filename):

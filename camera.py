@@ -13,6 +13,9 @@ class CameraHandler:
         self.height = height
         self.cap = None
 
+    def __repr__(self):
+        return f"CameraHandler(index={self.camera_index}, resolution={self.width}x{self.height}, fourcc={CAMERA_FOURCC})"
+
     def _open_camera(self):
         """Internal method to open camera connection."""
         if self.cap is None or not self.cap.isOpened():
