@@ -201,8 +201,23 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
 if __name__ == "__main__":
+    import socket
+    
+    # Try to find local IP address
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+    except:
+        local_ip = "localhost"
+
     Handler = DashboardHandler
-    with ThreadedHTTPServer(("", PORT), Handler) as httpd:
-        print(f"🚀 Dashboard is online at http://localhost:{PORT}")
-        print("Нажми Ctrl+C для остановки")
+    with ThreadedHTTPServer(("0.0.0.0", PORT), Handler) as httpd:
+        print(f"\n" + "="*50)
+        print(f"🚀 Eco-Agent Dashboard is ONLINE!")
+        print(f"📲 Local access:  http://localhost:{PORT}")
+        print(f"🌐 Network access: http://{local_ip}:{PORT}")
+        print("="*50 + "\n")
+        print("Нажми Ctrl+C, чтобы остановить сервер.")
         httpd.serve_forever()
