@@ -12,6 +12,7 @@ if IS_PI:
     CAMERA_INDEX = 0       
     MODEL_PATH = "moondream2-q4_k.gguf"
     MMPROJ_PATH = "moondream2-mmproj-f16.gguf"
+    CAMERA_FOURCC = "MJPG" # Большинство камер на Pi любят MJPEG
 else:
     # 💻 PC / WSL SETTINGS (Higher performance)
     print("💻 Environment: PC / WSL detected. Using high-performance settings.")
@@ -21,6 +22,7 @@ else:
     CAMERA_INDEX = 0       # Change to 1 or 2 if you have multiple cameras on PC
     MODEL_PATH = "moondream2-q4_k.gguf"
     MMPROJ_PATH = "moondream2-mmproj-f16.gguf"
+    CAMERA_FOURCC = "YUYV" # Твоя камера Venus на PC работает только в YUYV
 
 # --- COMMON SETTINGS ---
 TEMPERATURE = 0.1      # Stable response for classification

@@ -19,7 +19,9 @@ class CameraHandler:
             # Use CAP_V4L2 backend explicitly
             self.cap = cv2.VideoCapture(self.camera_index, cv2.CAP_V4L2)
             
-            # Remove MJPEG since the hardware doesn't support it!
+            # Use format from config.py
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*CAMERA_FOURCC))
+            
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             
