@@ -20,6 +20,9 @@ class CameraHandler:
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             
+            # Use MJPEG to avoid bandwidth timeouts (common on WSL/Pi)
+            self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+            
             # Give the camera time to initialize the sensor
             time.sleep(1.0)
             
