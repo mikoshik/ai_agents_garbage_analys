@@ -1,121 +1,132 @@
-import cv2
+import sys
 import time
-import subprocess
+import threading
 import os
+from camera import CameraHandler
+from models import LlamaProcessor
+from config import *
 
-# --- КОНФИГУРАЦИЯ ---
-MODEL_PATH = "moondream2-q4_k.gguf"
-MMPROJ_PATH = "moondream2-mmproj-f16.gguf"
-LLAMA_CLI = "./llama.cpp/build/bin/llava-cli"
-TEMP_IMAGE = "current_waste.jpg"
-
-# Пути к видео-анимациям (снимите свои или используйте заглушки)
-ANIMATIONS = {
-    "plastic": "animations/plastic.mp4",
-    "organic": "animations/organic.mp4",
-    "battery": "animations/battery.mp4",
-    "unknown": "animations/error.mp4"
-}
-
-def play_animation(category):
+def progress_bar(stop_event, expected_time=600):
     """
-    Запускает анимацию с помощью ffplay во весь экран.
-    Если файла нет, просто пишет текст.
+    Beautiful progress bar that runs while the model is processing.
+    Fills up to 99% based on 'expected_time', and jumps to 100% when stop_event is set.
     """
-    video_path = ANIMATIONS.get(category, ANIMATIONS["unknown"])
-    print(f"🎬 Воспроизвожу анимацию для: {category}")
+    start_time = time.time()
+    bar_length = 50
     
-    if os.path.exists(video_path):
-        # -fs: полноэкранный режим, -autoexit: закрыть окно после окончания
-        subprocess.Popen(["ffplay", "-fs", "-autoexit", "-nodisp", video_path])
-    else:
-        print(f"⚠️ Файл {video_path} не найден! Вывод на экран...")
-        # Если нет видео, можно вывести картинку или текст поверх OpenCV окна
-
-def analyze_image(image_path):
-    """
-    Вызов нейросети moondream2 через llama.cpp (llava-cli)
-    """
-    print("🧠 Анализ изображения...")
-    prompt = "Analyze the object being held in the hand. Describe its material, color, and shape in detail. Determine whether it is plastic, organic, or battery waste, and explain why. Be thorough in your description."
+    # Animation frames for the spinner
+    spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    idx = 0
     
-    # -c 2048: контекстное окно, --temp: температура для точности
-    cmd = [
-        LLAMA_CLI,
-        "-m", MODEL_PATH,
-        "--mmproj", MMPROJ_PATH,
-        "--image", image_path,
-        "-p", prompt,
-        "-c", "2048",
-        "--temp", "0.1"
-    ]
+    print("\n   🧠 AI is thinking...")
     
-    try:
-        # Запускаем и перехватываем вывод
-        result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode('utf-8').strip().lower()
-        print(f"🤖 Нейросеть ответила: {result}")
+    while not stop_event.is_set():
+        elapsed = time.time() - start_time
+        progress = min(elapsed / expected_time, 0.99)
         
-        # Простая фильтрация результата
-        if "plastic" in result: return "plastic"
-        if "organic" in result: return "organic"
-        if "battery" in result: return "battery"
-        return "unknown"
-    except Exception as e:
-        print(f"❌ Ошибка вызова llama.cpp: {e}")
-        return "unknown"
+        filled = int(progress * bar_length)
+        # Use smooth block characters for better aesthetics
+        bar = "█" * filled + "░" * (bar_length - filled)
+        
+        percent = int(progress * 100)
+        s = spinner[idx % len(spinner)]
+        idx += 1
+        
+        # ANSI Escape codes for colors: \033[94m is light blue, \033[0m is reset
+        sys.stdout.write(f"\r   {s}  \033[94m[{bar}]\033[0m {percent}% | Elapsed: {int(elapsed)}s ")
+        sys.stdout.flush()
+        time.sleep(0.1)
+    
+    # Final state when processing is done
+    total_time = int(time.time() - start_time)
+    sys.stdout.write(f"\r   ✨ \033[92m[{'█' * bar_length}]\033[0m 100% | Total time: {total_time}s         \n")
+    sys.stdout.flush()
 
 def main():
-    # Создаем папку для анимаций, если её нет
-    if not os.path.exists("animations"):
-        os.makedirs("animations")
-
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("❌ Камера не найдена!")
-        return
-
-    # Подготовка детектора движения
-    fgbg = cv2.createBackgroundSubtractorMOG2(history=300, varThreshold=60, detectShadows=True)
+    # Clear screen for better start
+    os.system('cls' if os.name == 'nt' else 'clear')
     
-    is_motion = False
-    last_motion_time = time.time()
-    wait_after_motion = 3.0 # Ждем 3 сек покоя перед анализом
-
-    print("🛰️ Система СОРТИРОВЩИК запущена. Жду движения у камеры...")
-
-    while True:
-        ret, frame = cap.read()
-        if not ret: break
-
-        # 1. Анализируем маску движения
-        fgmask = fgbg.apply(frame)
-        motion_pixels = cv2.countNonZero(fgmask)
-
-        # Порог срабатывания (подберите под освещение)
-        if motion_pixels > 6000:
-            is_motion = True
-            last_motion_time = time.time()
-            cv2.putText(frame, "MOTION DETECTED", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-        # 2. Если движение прекратилось — запускаем нейросеть
-        if is_motion and (time.time() - last_motion_time > wait_after_motion):
-            print("🚀 Объект неподвижен. Делаем снимок и анализируем!")
-            cv2.imwrite(TEMP_IMAGE, frame)
+    print("\033[1;96m")
+    print("="*60)
+    print("        🌿 ECO-AGENT: AI WASTE CLASSIFICATION 🌿")
+    print("="*60)
+    print("\033[0m")
+    
+    try:
+        print("🔗 Initializing hardware sensors...")
+        camera = CameraHandler()
+        
+        print("🧬 Loading Moondream2 Vision Model (this may take 30-60s)...")
+        model = LlamaProcessor()
+        
+        print("\033[92m✅ All systems online. Ready for scan.\033[0m")
+        
+        while True:
+            print("\n------------------------------------------------------------")
+            print("📸 Press \033[1m[ENTER]\033[0m to capture object | \033[1m[q + ENTER]\033[0m to exit")
             
-            category = analyze_image(TEMP_IMAGE)
-            play_animation(category)
+            cmd = input().strip().lower()
+            if cmd == 'q':
+                break
+                
+            # 1. Capture Image
+            print("🚀 Capturing frame...")
+            image_bytes = camera.capture_to_bytes()
             
-            # Сброс и задержка, чтобы пользователь успел убрать мусор
-            is_motion = False
-            time.sleep(7)
-            print("\n🔄 Жду следующий объект...")
+            if image_bytes is None:
+                print("❌ Error: Camera capture failed. Please check connection.")
+                continue
+            
+            # Save for debugging (optional but good to have)
+            with open("last_scan.jpg", "wb") as f:
+                f.write(image_bytes)
+            print("📸 Frame captured! Sending to AI...")
 
-        # Отображение (для отладки)
-        cv2.imshow('Sorter Feed', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'): break
-
-    cap.release()
-    cv2.destroyAllWindows()
+            # 2. Start Model Processing with Progress Tracking
+            stop_event = threading.Event()
+            result_container = {"text": "Processing failed."}
+            
+            def model_task():
+                try:
+                    # Run the classification
+                    response = model.process_image(image_bytes)
+                    result_container["text"] = response
+                finally:
+                    stop_event.set()
+            
+            # Use 600s as user-suggested wait time for bar scale
+            bar_thread = threading.Thread(target=progress_bar, args=(stop_event, 600))
+            task_thread = threading.Thread(target=model_task)
+            
+            bar_thread.start()
+            task_thread.start()
+            
+            # Wait for model to finish
+            task_thread.join()
+            stop_event.set()
+            bar_thread.join()
+            
+            # 3. Display Results in a stylized box
+            result = result_container["text"]
+            print("\n" + "╔" + "═"*58 + "╗")
+            print("║" + " " * 23 + "🔍 AI ANALYSIS" + " " * 21 + "║")
+            print("╠" + "═"*58 + "╣")
+            
+            # Wrap text manually if it's too long
+            import textwrap
+            wrapped = textwrap.fill(result, width=54)
+            for line in wrapped.split('\n'):
+                print(f"║  {line.ljust(54)}  ║")
+                
+            print("╚" + "═"*58 + "╝\n")
+            
+    except KeyboardInterrupt:
+        print("\n\n🛑 Shutting down Eco-Agent...")
+    except Exception as e:
+        print(f"\n🔥 Critical System Failure: {e}")
+    finally:
+        print("♻️ Releasing hardware resources...")
+        # Resources are released by __del__ in CameraHandler if needed
 
 if __name__ == "__main__":
     main()
