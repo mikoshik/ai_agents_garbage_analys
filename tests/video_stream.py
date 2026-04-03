@@ -36,9 +36,6 @@ class StreamingHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(encoded_image.tobytes())
                     self.wfile.write(b'\r\n')
-                    
-                    # Небольшая задержка для стабильности
-                    time.sleep(0.05)
             except Exception as e:
                 print(f"Стрим остановлен: {e}")
         else:

@@ -28,8 +28,15 @@ class CameraHandler:
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             
+            # Устанавливаем FPS из конфига
+            self.cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
+            
             # Give the camera time to initialize the sensor
             time.sleep(1.0)
+            
+            # Warm-up frames for auto-exposure happen only once when opening
+            for _ in range(CAMERA_WARMUP_FRAMES):
+                self.cap.read()
             
             if not self.cap.isOpened():
                 raise ConnectionError(f"❌ Error: Could not open camera at /dev/video{self.camera_index}")
@@ -50,10 +57,6 @@ class CameraHandler:
         Captures one frame from the camera and crops to the center.
         """
         self._open_camera()
-        
-        # Warm-up frames for auto-exposure
-        for _ in range(CAMERA_WARMUP_FRAMES):
-            self.cap.read()
             
         ret, frame = self.cap.read()
         

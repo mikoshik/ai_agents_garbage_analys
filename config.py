@@ -17,6 +17,7 @@ if IS_PI:
     CAMERA_HEIGHT = 480    
     CAMERA_WARMUP_FRAMES = 25 # Increased to give sensor more time to adjust exposure
     CAMERA_CROP_FACTOR = 0.9  
+    CAMERA_FPS = 30
 else:
     # 💻 PC / WSL SETTINGS (Higher performance)
     print("💻 Environment: PC / WSL detected. Using high-performance settings.")
@@ -31,6 +32,7 @@ else:
     CAMERA_HEIGHT = 1080    
     CAMERA_WARMUP_FRAMES = 25 # Increased to give sensor more time to adjust exposure
     CAMERA_CROP_FACTOR = 0.5
+    CAMERA_FPS = 30
 # --- COMMON SETTINGS ---
 TEMPERATURE = 0.1      # Stable response for classification
 MAX_TOKENS = 512       # Maximum length of the AI answer
