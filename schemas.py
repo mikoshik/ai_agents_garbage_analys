@@ -27,7 +27,7 @@ class WasteClassification(BaseModel):
     item_name: str
     material: str
     category: WasteCategory
-    description: str = Field(..., min_length=200)
+    description: str = Field(..., min_length=50)
 
     @field_validator('category', mode='before')
     @classmethod

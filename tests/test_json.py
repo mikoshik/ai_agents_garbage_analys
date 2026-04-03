@@ -30,7 +30,6 @@ def test_json_output():
         print(f"Item: {result.item_name}")
         print(f"Material: {result.material}")
         print(f"Category: {result.category}")
-        print(f"Recyclable: {result.is_recyclable}")
         print(f"Description: {result.description}")
         
         # Also print as raw JSON
