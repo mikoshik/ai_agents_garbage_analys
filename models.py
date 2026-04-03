@@ -2,13 +2,14 @@ import base64
 import os
 from llama_cpp import Llama
 from llama_cpp.llama_chat_format import MoondreamChatHandler
+from config import *
 
 class LlamaProcessor:
     """
     Wrapper class for llama.cpp, working with the moondream2 multimodal model.
     Takes image bytes and returns a text description/category.
     """
-    def __init__(self, model_path="moondream2-q4_k.gguf", mmproj_path="moondream2-mmproj-f16.gguf"):
+    def __init__(self, model_path=MODEL_PATH, mmproj_path=MMPROJ_PATH):
         # Check if model files exist
         if not os.path.exists(model_path) or not os.path.exists(mmproj_path):
             print(f"⚠️ Warning: Model files not found! Expected {model_path} and {mmproj_path}")
@@ -16,19 +17,16 @@ class LlamaProcessor:
         # Special ChatHandler for Moondream2 (important!)
         self.chat_handler = MoondreamChatHandler(clip_model_path=mmproj_path)
         
-        # Initialize model. 
-        # n_threads=4 is ideal for Raspberry Pi 4.
-        # n_ctx=1200 is sufficient for Moondream2 (729 image tokens + prompt + response).
-        # Lower n_ctx reduces RAM usage.
+        # Initialize model with config parameters
         self.llm = Llama(
             model_path=model_path,
             chat_handler=self.chat_handler,
-            n_ctx=1200,
-            n_threads=4,
+            n_ctx=LLM_CTX,
+            n_threads=LLM_THREADS,
             logits_all=False
         )
 
-    def process_image(self, image_data: bytes, prompt: str = "Describe the object held in the person's hand with as much detail as possible. Identify its physical characteristics: material (plastic, metal, organic, glass, etc.), color, shape, texture, and any visible text or branding. Finally, classify what type of waste this is (plastic, organic, battery, or other) and explain your reasoning.") -> str:
+    def process_image(self, image_data: bytes, prompt: str = DEFAULT_PROMPT) -> str:
         """
         Takes image bytes, converts to Data URI and processes through the neural network.
         """
@@ -48,8 +46,8 @@ class LlamaProcessor:
                         ]
                     }
                 ],
-                temperature=0.1, # For response stability during categorization
-                max_tokens=512   # Response length limit
+                temperature=TEMPERATURE,
+                max_tokens=MAX_TOKENS
             )
 
             result_text = response["choices"][0]["message"]["content"].strip().lower()
