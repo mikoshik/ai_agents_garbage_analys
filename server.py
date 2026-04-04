@@ -49,6 +49,26 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Eco-Agent Dashboard</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+            <meta http-equiv="refresh" content="30"> <!-- Fallback refresh every 30s -->
+            <script>
+                // Simple polling to check for new scans
+                let lastScanCount = {len(scans)};
+                async function checkForUpdates() {
+                    try {
+                        const response = await fetch('/');
+                        const text = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(text, 'text/html');
+                        const currentScanCount = doc.querySelectorAll('.card').length;
+                        
+                        if (currentScanCount > lastScanCount) {
+                            console.log("New scan detected! Reloading...");
+                            window.location.reload();
+                        }
+                    } catch (e) { console.error("Poll failed", e); }
+                }
+                setInterval(checkForUpdates, 3000); // Check every 3 seconds
+            </script>
             <style>
                 :root {
                     --bg-color: #0f172a;

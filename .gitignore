@@ -2,7 +2,7 @@
 scans/
 assets/
 last_scan.jpg
-
+*.env
 # Python
 .venv/
 __pycache__/
