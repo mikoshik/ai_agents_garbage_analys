@@ -1,6 +1,8 @@
 import os
 import multiprocessing
+from dotenv import load_dotenv
 
+load_dotenv()
 # --- AUTO DETECTION ---
 IS_PI = os.path.exists('/proc/device-tree/model')
 
@@ -34,6 +36,10 @@ else:
     CAMERA_CROP_FACTOR = 0.5
     CAMERA_FPS = 30
 # --- COMMON SETTINGS ---
+LOCAL_MODEL = 0        # 1 = Local (Moondream2), 0 = Cloud (GPT-4o-mini)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Replace with your real key
+CLOUD_MODEL_NAME = "gpt-4o-mini"
+
 TEMPERATURE = 0.1      # Stable response for classification
 MAX_TOKENS = 512       # Maximum length of the AI answer
 
