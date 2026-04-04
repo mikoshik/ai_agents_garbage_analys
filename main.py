@@ -56,25 +56,9 @@ def frame_to_ascii(frame, width=100):
         ascii_str += "\n"
     return ascii_str
 
-import multiprocessing
-import subprocess
-
-def start_dashboard_server():
-    """Starts the dashboard server in a separate process."""
-    try:
-        # Launch using subprocess to keep it isolated
-        subprocess.Popen([sys.executable, "server.py"], 
-                        stdout=subprocess.DEVNULL, 
-                        stderr=subprocess.DEVNULL)
-        print("🚀 Dashboard server started automatically at http://localhost:8060")
-    except Exception as e:
-        print(f"⚠️ Failed to start dashboard server: {e}")
-
 def main():
     os.system('cls' if os.name == 'nt' else 'clear')
     print("\033[1;96m" + "="*60 + "\n        🌿 ECO-AGENT: AI WASTE CLASSIFICATION 🌿\n" + "="*60 + "\033[0m")
-    
-    start_dashboard_server()
     
     try:
         print("🔗 Initializing sensors...")
