@@ -78,7 +78,7 @@ if __name__ == "__main__":
         target_image = sys.argv[1]
     else:
         # Priority 2: Look in root, then in assets/
-        potential_files = ["last_scan.jpg", "assets/last_scan.jpg", "assets/image.png"]
+        potential_files = [ "assets/paper.jpg"]
         target_image = None
         for f in potential_files:
             if os.path.exists(f):
