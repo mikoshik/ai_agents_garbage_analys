@@ -58,6 +58,11 @@ class CameraHandler:
         """
         self._open_camera()
             
+        # Flush the buffer to get the most recent frame
+        # OpenCV buffers a few frames (often 3-5), reading them throws out stale data
+        for _ in range(5):
+            self.cap.grab()
+            
         ret, frame = self.cap.read()
         
         if not ret:
