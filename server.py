@@ -2,6 +2,8 @@ import os
 import json
 import http.server
 import socketserver
+import time
+import threading
 from datetime import datetime
 
 PORT = 8060
@@ -13,8 +15,29 @@ os.makedirs(SCANS_DIR, exist_ok=True)
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        super().end_headers()
+
     def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
+        if self.path == "/api/scans":
+            scans = []
+            if os.path.exists(SCANS_DIR):
+                for filename in os.listdir(SCANS_DIR):
+                    if filename.endswith(".json"):
+                        try:
+                            with open(os.path.join(SCANS_DIR, filename), "r", encoding="utf-8") as f:
+                                data = json.load(f)
+                                scans.append(data)
+                        except Exception as e:
+                            print(f"Error loading {filename}: {e}")
+            
+            scans.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+            self.send_response(200)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(scans).encode('utf-8'))
+        elif self.path == "/" or self.path == "/index.html":
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
@@ -23,6 +46,40 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             # Check if file exists to avoid 404 error page from my side
             # SimpleHTTPRequestHandler will handle the file serving correctly
             return super().do_GET()
+
+    def do_POST(self):
+        if self.path == "/api/upload":
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length == 0:
+                self.send_response(400)
+                self.end_headers()
+                return
+                
+            image_bytes = self.rfile.read(content_length)
+            
+            print(f"📥 Received uploaded image binary, starting scan process...")
+            
+            # import here to avoid circular imports / missing deps at startup if any
+            from run_scan_binary import run_automated_scan_binary
+            
+            # Start processing in a background thread so we can reply immediately
+            threading.Thread(target=run_automated_scan_binary, args=(image_bytes,)).start()
+            
+            self.send_response(200)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "success", "message": "Scan started"}).encode('utf-8'))
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
     def render_dashboard(self):
         # Load all scans

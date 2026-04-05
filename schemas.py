@@ -1,6 +1,7 @@
 from pydantic import BaseModel, field_validator, Field
 from typing import Optional
 from enum import Enum
+import random
 
 class ObjectDetection(BaseModel):
     """
@@ -28,6 +29,7 @@ class WasteClassification(BaseModel):
     material: str
     category: WasteCategory
     description: str = Field(..., min_length=50)
+    rewards: int = Field(default_factory=lambda: random.randint(1, 10))
 
     @field_validator('category', mode='before')
     @classmethod
