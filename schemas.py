@@ -28,7 +28,7 @@ class WasteClassification(BaseModel):
     item_name: str
     material: str
     category: WasteCategory
-    description: str = Field(..., min_length=50)
+    actions_human: str = Field(..., min_length=50, description="Describe the practical steps the user must take to prepare this specific item before disposing of it (e.g., washing, crushing, separating parts).")
     rewards: int = Field(default_factory=lambda: random.randint(1, 10))
 
     @field_validator('category', mode='before')
@@ -41,10 +41,10 @@ class WasteClassification(BaseModel):
                     return cat.value
         return v
 
-    @field_validator('description')
+    @field_validator('actions_human')
     @classmethod
-    def validate_description(cls, v: str) -> str:
+    def validate_actions_human(cls, v: str) -> str:
         if not v or len(v.strip()) < 5:
-            raise ValueError("Описание обязательно и должно быть подробным!")
+            raise ValueError("Instructions (actions_human) are required and must be detailed!")
         return v
 

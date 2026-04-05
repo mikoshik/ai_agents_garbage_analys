@@ -253,7 +253,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                         </div>
                         
                         <div class="desc">
-                            {res.get('description', 'No description available')}
+                            {res.get('actions_human', res.get('description', 'No instructions available'))}
                         </div>
 
                         <div style="margin-top: 15px; font-size: 0.75rem; color: #64748b; display: flex; gap: 15px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 10px;">
